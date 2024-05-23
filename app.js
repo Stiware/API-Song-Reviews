@@ -1,6 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const Review = require('./model/Review')
+const env = require('dotenv/config')
 
 
 // const songs = require('./sr.json')
@@ -10,7 +11,7 @@ app.use(express.json())
 app.disable('x-powered-by')
 
 const PORT = process.env.PORT || 3000
-mongoose.connect('mongodb+srv://shiro:alexander@cluster0.cjsr3gh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0').then(() => console.log('Database connected!')).catch((err) => console.log(err))
+mongoose.connect(`mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@cluster0.cjsr3gh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`).then(() => console.log('Database connected!')).catch((err) => console.log(err))
 
 
 // Routes get
