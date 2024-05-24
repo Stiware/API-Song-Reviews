@@ -1,8 +1,8 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const Review = require('./model/Review')
+const artistData = require('./model/artistData')
 const env = require('dotenv/config')
-
 
 // const songs = require('./sr.json')
 const app = express()
@@ -15,29 +15,79 @@ mongoose.connect(`mongodb+srv://${process.env.USER}:${process.env.PASSWORD}@clus
 
 
 // Routes get
-app.get('/all', async (req, res) => {
+
+//get all reviews
+app.get('/reviews', async (req, res) => {
     let allreviews = await Review.find({})
     res.json(allreviews).status(200)
 })
+//get review by id
+app.get('/review/:id', async (req, res) => {
+    const { id } = req.params
+    await Review.findById(id).then((song) => res.json(song)).catch((err) => res.status(404).json({message: err.message, status: 404}))
 
-app.get('/id/:id', async (req, res) => {
-    let song = await Review.findById(req.params.id)
-    res.json(song).status(200)
+})
+
+//get all albums by artist
+app.get('/reviews/artist', async (req, res) => {
+    const { artist } = req.query
+    if(artist){
+        await artistData.find({"name": artist}).then((album) => res.json(album)).catch((err) => res.status(404).json({message: err.message, status: 404}))
+    }   
+    else{
+        await artistData.find({}).then((album) => res.json(album)).catch((err) => res.status(404).json({message: err.message, status: 404}))
+    }
+})
+
+
+//get reviews by artist
+app.get('/reviews/artist',async (req, res) => {
+    const { artist } = req.query
+    if(artist){
+        await artistData.find({"name": artist}).then((album) => res.json(album)).catch((err) => res.status(404).json({message: err.message, status: 404}))
+    }   
+    else{
+        await artistData.find({}).then((album) => res.json(album)).catch((err) => res.status(404).json({message: err.message, status: 404}))
+    }
+    
 })
 
 // Routes post
-app.post('/add', async (req,res)=>{
+app.post('/review/add', async (req,res)=>{
     try{
-        // res.send(req.body)
-        const { song_name, artist, album, album_cover, genre, year, rating, review } = req.body
+        const { user,song_details } = req.body
+        const { song_name, artist, album, album_cover, genre, year, rating, review } = song_details
         
-        if(!song_name || !artist || !album || !album_cover || !genre || !year || !rating || !review){
-            return res.status(400).json({message: 'All fields are required'})
-        }
-        let newReview  = new Review({ song_name, artist, album, album_cover, genre, year, rating, review })
+        //FALTA VALIDAR LOS DATOS DE ENTRADA
+        // if(!song_name || !artist || !album || !album_cover || !genre || !year || !rating || !review){
+        //     return res.status(400).json({message: 'All fields are required'})
+        // }
+        let newReview  = new Review({user, song_details})
         await newReview.save()
-
+        
+        // Here i save the artist in the artistData model, the model contains only the name of the artist and the albums that he has
+        await artistData.find({"name": artist}).then((data) => {
+            if(data.length === 0){
+                let newArtist = new artistData({name: artist, albums: [{name: album, cover: album_cover}]})
+                newArtist.save()
+            }
+            else{
+                let albumList = data[0].albums
+                let exists = false
+                for (let i of albumList){
+                    if(i.name === album){
+                        exists = true
+                    }
+                }
+                if(!exists){
+                    data[0].albums.push({name: album, cover: album_cover})
+                    data[0].save()
+                }
+            }
+        })
+        // artistData.findOneAndUpdate({name: artist}, {$push: {albums: {name: album, cover: album_cover}}}).then((data) => console.log(data)).catch((err) => console.log(err))
         res.status(201).json({message: 'New review added'})
+
     }
     catch (err){
         res.status(500).json({message: err.message}) 
@@ -45,7 +95,7 @@ app.post('/add', async (req,res)=>{
 })
 
 // Routes put
-app.put('/update/:id', (req, res) => {
+app.put('/review/edit/:id', (req, res) => {
 
     const id = req.params.id
     const editReview = req.body
@@ -73,11 +123,10 @@ app.patch('/update/:id', (req, res) => {
 
 
 // Routes delete
-app.delete('/delete/:id', (req, res) => {
-    const id = req.params.id
-    const index = songs.data.findIndex(song => song.id === id)
-    songs.data.splice(index, 1)
-    res.json(songs)
+app.delete('/review/delete/:id', async (req, res) => {
+    const { id } = req.params
+    await Review.findByIdAndDelete(id)
+    res.json({message: 'Review deleted'}).status(200)
 })
 
 // 404
