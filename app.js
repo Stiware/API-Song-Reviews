@@ -3,11 +3,15 @@ const mongoose = require('mongoose')
 const Review = require('./model/Review')
 const artistData = require('./model/artistData')
 const env = require('dotenv/config')
+const z = require('zod')
+
 
 // const songs = require('./sr.json')
 const app = express()
 
+//middleware to parse json from req.body
 app.use(express.json())
+
 app.disable('x-powered-by')
 
 const PORT = process.env.PORT || 3000
@@ -24,8 +28,9 @@ app.get('/reviews', async (req, res) => {
 //get review by id
 app.get('/review/:id', async (req, res) => {
     const { id } = req.params
-    await Review.findById(id).then((song) => res.json(song)).catch((err) => res.status(404).json({message: err.message, status: 404}))
+    if(!id) return res.status(400).json({message: 'Id is required'})
 
+    await Review.findById(id).then((song) => res.json(song)).catch((err) => res.status(404).json({message: err.message, status: 404}))
 })
 
 //get all albums by artist
@@ -53,15 +58,11 @@ app.get('/reviews/artist',async (req, res) => {
 })
 
 // Routes post
-app.post('/review/add', async (req,res)=>{
+app.post('/review', async (req,res)=>{
     try{
         const { user,song_details } = req.body
+            
         const { song_name, artist, album, album_cover, genre, year, rating, review } = song_details
-        
-        //FALTA VALIDAR LOS DATOS DE ENTRADA
-        // if(!song_name || !artist || !album || !album_cover || !genre || !year || !rating || !review){
-        //     return res.status(400).json({message: 'All fields are required'})
-        // }
         let newReview  = new Review({user, song_details})
         await newReview.save()
         
@@ -85,7 +86,6 @@ app.post('/review/add', async (req,res)=>{
                 }
             }
         })
-        // artistData.findOneAndUpdate({name: artist}, {$push: {albums: {name: album, cover: album_cover}}}).then((data) => console.log(data)).catch((err) => console.log(err))
         res.status(201).json({message: 'New review added'})
 
     }
@@ -95,7 +95,8 @@ app.post('/review/add', async (req,res)=>{
 })
 
 // Routes put
-app.put('/review/edit/:id', (req, res) => {
+//Edit more fields of a review
+app.put('/review/:id', (req, res) => {
 
     const id = req.params.id
     const editReview = req.body
@@ -113,7 +114,8 @@ app.put('/review/edit/:id', (req, res) => {
     // res.send(editReview)
 
 // Routes patch
-app.patch('/update/:id', (req, res) => {
+//Edit only one field of a review
+app.patch('/review/:id', (req, res) => {
     const id = req.params.id
     const newSong = req.body
     const index = songs.data.findIndex(song => song.id === id)
@@ -123,7 +125,7 @@ app.patch('/update/:id', (req, res) => {
 
 
 // Routes delete
-app.delete('/review/delete/:id', async (req, res) => {
+app.delete('/review/:id', async (req, res) => {
     const { id } = req.params
     await Review.findByIdAndDelete(id)
     res.json({message: 'Review deleted'}).status(200)

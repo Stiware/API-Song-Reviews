@@ -1,10 +1,19 @@
 const mongoose = require('mongoose')
 
 const artistData = new mongoose.Schema({
-    name: String,
+    name:{
+        type: String,
+        required: true
+    },
     albums: [{
-        name: String,
-        cover: String
+        name: {
+            type: String,
+            required: true
+        },
+        cover: {
+            type: String,
+            required: true
+        }
     }]
 })
 module.exports = mongoose.model("artist", artistData)

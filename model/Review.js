@@ -2,20 +2,60 @@ const mongoose = require('mongoose')
     
 const songReviews = new mongoose.Schema({
     user: {
-        userName: String,
-        userId: String,
-        userImage: String
+        userName:{
+            type: String,
+            required: true
+        },
+        userId: {
+            type: String,
+            required: true
+        },
+        userImage:{
+            type: String,
+            required: true
+        }
     },
-    song_details:{
-        song_name: String,
-        artist: String,
-        album: String,
-        album_cover: String,
-        genre: String,
-        year: Number,
-        rating: Number,
-        review: String
-    }
+    song_details: {
+        song_name: {
+            type: String,
+            required: true
+        },
+        artist: {
+            type: String,
+            required: true
+        },
+        album: {
+            type: String,
+            required: true
+        },
+        album_cover: {
+            type: String,
+            required: true
+        },
+        genre: {
+            type: String,
+            required: true
+        },
+        year: {
+            type: Number,
+            required: true
+        },
+        rating: {
+            type: Number,
+            required: true,
+            min: [0, 'Rating must be between 0 and 5'],
+            max: [5, 'Rating must be between 0 and 5']
+        },
+        review: {   
+            type: String,
+            required: true,
+            
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        }
+    },
 })
 
 
